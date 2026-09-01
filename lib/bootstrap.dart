@@ -1,5 +1,3 @@
-import 'package:hiddify/features/profile/notifier/profile_notifier.dart';
-
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -20,9 +18,9 @@ import 'package:hiddify/features/app/widget/app.dart';
 import 'package:hiddify/features/auto_start/notifier/auto_start_notifier.dart';
 import 'package:hiddify/features/chain/model/chain_enum.dart';
 import 'package:hiddify/features/chain/notifier/chain_profile_notifier.dart';
-
 import 'package:hiddify/features/log/data/log_data_providers.dart';
 import 'package:hiddify/features/profile/data/profile_data_providers.dart';
+import 'package:hiddify/features/profile/notifier/add_profile_notifier.dart';
 import 'package:hiddify/features/profile/notifier/active_profile_notifier.dart';
 import 'package:hiddify/features/proxy/active/active_proxy_notifier.dart';
 import 'package:hiddify/features/system_tray/notifier/system_tray_notifier.dart';
@@ -101,17 +99,9 @@ Future<void> lazyBootstrap(WidgetsBinding widgetsBinding, Environment env) async
   );
   await _safeInit("hiddify-core", () => container.read(hiddifyCoreServiceProvider).init());
 
-  // Eagerly listen to activeProxyNotifierProvider to force synchronous evaluation in microtasks,
-  // avoiding lazy build-phase flushes and sibling dependency collisions on the Home page.
   container.listen(activeProxyNotifierProvider, (previous, next) {});
 
   if (!kIsWeb) {
-    // await _safeInit(
-    //   "deep link service",
-    //   () => container.read(deepLinkNotifierProvider.future),
-    //   timeout: 1000,
-    // );
-
     if (PlatformUtils.isDesktop) {
       await _safeInit("system tray", () => container.read(systemTrayNotifierProvider.future), timeout: 1000);
     }
@@ -144,9 +134,9 @@ Future<void> lazyBootstrap(WidgetsBinding widgetsBinding, Environment env) async
   if (!kIsWeb) {
     FlutterNativeSplash.remove();
   }
-  // SentryFlutter.s(DateTime.now().toUtc());
 }
 
+Future<T> _init<T>(String name, Future<T> Function() initializer, {int? timeout}) async {
   final stopWatch = Stopwatch()..start();
   Logger.bootstrap.info("initializing [$name]");
   Future<T> func() => timeout != null ? initializer().timeout(Duration(milliseconds: timeout)) : initializer();
