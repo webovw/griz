@@ -1,3 +1,5 @@
+import 'package:hiddify/features/profile/notifier/profile_notifier.dart';
+
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -121,8 +123,15 @@ Future<void> lazyBootstrap(WidgetsBinding widgetsBinding, Environment env) async
     }
   }
 
-  Logger.bootstrap.info("bootstrap took [${stopWatch.elapsedMilliseconds}ms]");
-  stopWatch.stop();
+  // --- GRIZ VPN: АВТОДОБАВЛЕНИЕ ПОДПИСКИ ---
+  final profileRepo = container.read(profileRepositoryProvider).requireValue;
+  final profiles = await profileRepo.watchAll().first;
+  if (profiles.isEmpty) {
+    try {
+      await container.read(addProfileNotifierProvider.notifier).add("https://sub.grizvpn.bine.me/");
+    } catch (e) {}
+  }
+  // ----------------------------------------
 
   runApp(
     ProviderScope(
@@ -138,7 +147,6 @@ Future<void> lazyBootstrap(WidgetsBinding widgetsBinding, Environment env) async
   // SentryFlutter.s(DateTime.now().toUtc());
 }
 
-Future<T> _init<T>(String name, Future<T> Function() initializer, {int? timeout}) async {
   final stopWatch = Stopwatch()..start();
   Logger.bootstrap.info("initializing [$name]");
   Future<T> func() => timeout != null ? initializer().timeout(Duration(milliseconds: timeout)) : initializer();
